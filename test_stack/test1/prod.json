@@ -1,0 +1,9 @@
+{
+  "domain": "example.com",
+  "env": "prod",
+  "feature_flags": {
+    "featureA": true
+  },
+  "foo": "bar",
+  "tls": true
+}

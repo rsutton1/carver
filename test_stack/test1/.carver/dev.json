@@ -1,0 +1,9 @@
+{
+  "domain": "dev.internal.example.com",
+  "env": "dev",
+  "feature_flags": {
+    "featureB": true,
+    "new_feature": true
+  },
+  "tls": false
+}

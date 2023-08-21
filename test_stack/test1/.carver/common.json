@@ -1,0 +1,6 @@
+{
+  "feature_flags": {
+    "featureA": true
+  },
+  "foo": "bar"
+}

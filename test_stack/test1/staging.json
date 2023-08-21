@@ -1,0 +1,10 @@
+{
+  "domain": "staging.internal.example.com",
+  "env": "staging",
+  "feature_flags": {
+    "featureA": true,
+    "featureB": true
+  },
+  "foo": "bar",
+  "tls": true
+}

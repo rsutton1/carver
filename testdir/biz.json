@@ -1,0 +1,14 @@
+{
+    "__": [
+        {
+            "remove": [
+                "foo"
+            ]
+        }
+    ],
+    "biz":"baz",
+    "zoo":"zaz",
+    "nest": {
+        "niz":"naz"
+    }
+}

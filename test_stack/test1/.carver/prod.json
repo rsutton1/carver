@@ -1,0 +1,5 @@
+{
+  "domain": "example.com",
+  "env": "prod",
+  "tls": true
+}

@@ -1,0 +1,7 @@
+{
+    "foo":"bar",
+    "nest":{
+        "asdf":"zxcv",
+        "niz":"overwrite_me"
+    }
+}

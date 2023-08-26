@@ -4,11 +4,9 @@ import (
     "log"
     "fmt"
     "path"
-    "sort"
     "os"
     "flag"
     "encoding/json"
-    "golang.org/x/exp/maps"
     "github.com/nqd/flat"
 )
 
@@ -33,10 +31,6 @@ type file struct {
     obj map[string]interface{}
 }
 
-func (i * filesArgs) String() string {
-    return "hello"
-}
-
 func (i * filesArgs) Set(value string) error {
     *i = append(*i, value)
     return nil
@@ -53,91 +47,6 @@ func readJsonFile(path string) (interface{}, error) {
     var f interface{}
     json.Unmarshal(b, &f)
     return f, err
-}
-
-func merge(o1 interface{}, o2 interface{}) interface{} {
-    o1m := o1.(map[string]interface{})
-    o2m := o2.(map[string]interface{})
-    next := o2m
-    ops, opsExist := o1m["__"]
-    if opsExist {
-        delete(o1m, "__")
-    }
-    for k, v := range o1m {
-        switch vv := v.(type) {
-        case map[string]interface{}:
-            o2v, ok := o2m[k]
-            if !ok {
-                o2v = make(map[string]interface{})
-            }
-            next[k] = merge(v, o2v)
-        default:
-            next[k] = vv
-        }
-    }
-    if opsExist {
-        for _, op := range ops.([]interface{}) {
-            opRemove, ok := op.(map[string]interface{})["remove"]
-            if ok {
-                for _, keyRemove := range opRemove.([]interface{}) {
-                    delete(next, keyRemove.(string))
-                }
-            }
-            _, ok = op.(map[string]interface{})["replace"]
-            if ok {
-                next = o1m
-            }
-        }
-    }
-    return next
-}
-
-func intersect(s1 []string, s2 []string) []string {
-    var smap map[string]bool
-    smap = make(map[string]bool)
-    var common map[string]bool
-    common = make(map[string]bool)
-    for _, k := range s1 {
-        smap[k] = true
-    }
-    for _, k := range s2 {
-        _ , ok := smap[k]
-        if ok {
-            common[k] = true
-        }
-    }
-    commonList := maps.Keys(common)
-    sort.Strings(commonList)
-    return commonList
-}
-
-func isMap(v interface{}) bool {
-    switch v.(type) {
-    case map[string]interface{}:
-        return true
-    }
-    return false
-}
-
-func common(o1 interface{}, o2 interface{}) interface{} {
-    o1m := o1.(map[string]interface{})
-    o2m := o2.(map[string]interface{})
-    merged := make(map[string]interface{})
-    keys1 := maps.Keys(o1m)
-    keys2 := maps.Keys(o2m)
-    common_keys := intersect(keys1, keys2)
-    for _, k := range common_keys {
-        v1, _ := o1m[k]
-        v2, _ := o2m[k]
-        v1IsMap := isMap(v1)
-        v2IsMap := isMap(v2)
-        if v1IsMap && v2IsMap {
-            merged[k] = common(v1, v2)
-        } else {
-            merged[k] = o2m[k]
-        }
-    }
-    return merged
 }
 
 func loadFiles(dir string, ignore string) []file {

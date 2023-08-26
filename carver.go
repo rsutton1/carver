@@ -19,14 +19,6 @@ type keymap_node struct {
     Paths map[string]interface{} `json:"paths"`
 }
 
-// type keymap_value struct {
-//     values map[string]keymap_node
-// }
-
-// type keymap_type struct {
-//     types map[string]keymap_value
-// }
-
 type keymap map[string]map[string]map[string]keymap_node
 
 type monad struct {
@@ -148,17 +140,6 @@ func common(o1 interface{}, o2 interface{}) interface{} {
     return merged
 }
 
-// func main() {
-//     flag.Var(&bf, "bf", "path to base file")
-//     flag.Var(&cf, "cf", "path to child file")
-//     flag.Parse()
-//     b := readJsonFile(bf[0])
-//     c := readJsonFile(cf[0])
-//     mf := merge(c, b)
-//     m, _ := json.Marshal(mf)
-//     fmt.Println(string(m))
-// }
-
 func loadFiles(dir string, ignore string) []file {
     files, err := os.ReadDir(dir)
     if err != nil {
@@ -169,8 +150,6 @@ func loadFiles(dir string, ignore string) []file {
     for _, e := range files {
         file_path := path.Clean(e.Name())
         file_path_absolute := path.Clean(dir + "/" + e.Name())
-        fmt.Println(file_path)
-        fmt.Println(ignore)
         if file_path == ignore {
             continue
         }
@@ -241,7 +220,6 @@ func main() {
         normalizeCmd.Parse(sub_args)
         dir := c
         files := loadFiles(dir, n)
-        fmt.Println(files)
         keymap_monad := keymapFiles(files)
         num_files := len(keymap_monad.names)
         filenames := keymap_monad.
@@ -253,7 +231,6 @@ func main() {
                 }...).
             km.to_files()
         writeFiles(n, filenames)
-        // m, _ := json.MarshalIndent(filenames, "", "  ")
     case "merge":
         mergeCmd.Parse(sub_args)
         dir := n
@@ -271,7 +248,6 @@ func main() {
                 }...).
             km.to_files()
         writeFiles(c, filenames)
-        // m, _ := json.MarshalIndent(filenames, "", "  ")
     default:
         fmt.Println("invalid subcommand")
     }
@@ -313,35 +289,11 @@ func (km keymap) set_node(p string, v interface{}, kmn keymap_node) keymap {
     return km
 }
 
-// func (km keymap) copy() keymap {
-//     km_copy := make(keymap)
-//     for k := range km {
-//         km_copy[k] = make(map[string]map[string]keymap_node)
-//         for i := range km[k] {
-//             km_copy[k][i] = make(map[string]keymap_node)
-//             for p, q := range km[k][i] {
-//                 new_paths := make(map[string]interface{})
-//                 for x, z := range q.Paths {
-//                     new_paths[x] = z
-//                 }
-//                 km_copy[k][i][p] = keymap_node{q.Count, new_paths}
-//             }
-//         }
-//     }
-//     // fmt.Printf("\nkm      %v\n", km)
-//     // fmt.Printf("km_copy %v\n", km_copy)
-//     return km_copy
-// }
-
 func (m monad) bind(f func(keymap, ...interface{}) (keymap, error), args ...interface{}) monad {
     if m.err != nil {
         return monad{m.err, m.km, m.names}
     }
     result, err := f(m.km, args...)
-    str, _ := json.MarshalIndent(result,"","  ")
-    fmt.Println(f)
-    fmt.Println(args)
-    fmt.Println(string(str))
     return monad{err, result, m.names}
 }
 
@@ -418,15 +370,10 @@ func resolve(km keymap, args ...interface{}) (keymap, error) {
             for vStr := range km[p][t] {
                 kmn := km[p][t][vStr]
                 _, err := kmn.Paths[common_name]
-                fmt.Println(kmn.Paths)
-                fmt.Println(p)
-                fmt.Println(err)
                 if err {
-                    fmt.Println("IN")
                     kmn.Paths = paths_new
                     kmn.Count = num_files
                 } else {
-                    fmt.Println("OUT")
                 }
                 km[p][t][vStr] = kmn
             }

@@ -1,0 +1,6 @@
+domain: test.internal.example.com
+env: test
+feature_flags:
+  featureB: true
+  new_feature: true
+tls: false

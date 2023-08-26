@@ -8,6 +8,7 @@ import (
     "flag"
     "encoding/json"
     "github.com/nqd/flat"
+    "github.com/ghodss/yaml"
 )
 
 type filesArgs []string
@@ -45,7 +46,11 @@ func readJsonFile(path string) (interface{}, error) {
         return nil, err
     }
     var f interface{}
-    json.Unmarshal(b, &f)
+    if json.Valid(b) {
+        err = json.Unmarshal(b, &f)
+    } else {
+        err = yaml.Unmarshal(b, &f)
+    }
     return f, err
 }
 
@@ -94,8 +99,15 @@ func keymapFiles(files []file) monad {
 func writeFiles(output_dir string, filenames map[string]map[string]interface{}) {
     for name, obj := range filenames {
         file_path_absolute := path.Clean(output_dir + "/" + name)
+        file_ext := path.Ext(file_path_absolute)
         objI, _ := flat.Unflatten(obj, nil)
-        objStr, _ := json.MarshalIndent(objI, "", "  ")
+        var objStr []byte
+        fmt.Println(file_ext)
+        if file_ext == ".json" {
+            objStr, _ = json.MarshalIndent(objI, "", "  ")
+        } else {
+            objStr, _ = yaml.Marshal(objI)
+        }
         err := os.MkdirAll(output_dir, 0750)
         if err != nil {
             log.Fatal(err)

@@ -1,7 +1,6 @@
 # Carver
 
-Carver is a command-line tool that seamlessly aligns JSON files with best
-practices to maximize productivity for developers.
+Carver is an easy-to-use command-line tool that seamlessly organizes JSON files.
 
 ## Example
 
@@ -53,7 +52,7 @@ We can use Carver to consolidate these files into a common file with
 environment-specific overrides.
 
 ```
-$ carver
+$ carver normalize
 Generated ./common.json
 Updated ./dev.json
 Updated ./staging.json
@@ -116,10 +115,10 @@ keys which have the same value in all files.
 Carver is idempotent so it can be run repeatedly. If it finds the files are
 already consolidated, it will not make any changes.
 
-Run carver with `--merge` to restore the files:
+Run carver with `merge` to restore the files:
 
 ```
-$ carver --merge
+$ carver merge
 Removed ./common.json
 Updated ./dev.json
 Updated ./staging.json

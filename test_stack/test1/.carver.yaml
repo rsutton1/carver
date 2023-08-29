@@ -1,0 +1,5 @@
+files:
+ - dev.json
+ - staging.json
+ - prod.json
+ - test.yaml

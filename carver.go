@@ -118,7 +118,6 @@ func writeFiles(output_dir string, filenames map[string]map[string]interface{}) 
         file_ext := path.Ext(file_path_absolute)
         objI, _ := flat.Unflatten(obj, nil)
         var objStr []byte
-        fmt.Println(file_ext)
         if file_ext == ".json" {
             objStr, _ = json.MarshalIndent(objI, "", "  ")
         } else {

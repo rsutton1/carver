@@ -119,6 +119,20 @@ func writeFiles(output_dir string, filenames map[string]map[string]interface{}) 
     }
 }
 
+func printUsage() {
+    fmt.Println(`usage: carver [options] command
+
+  command:
+    normalize          normalize CONFIG_DIR and store the result in NORMALIZED_DIR
+    merge              merge NORMALIZED_DIR and store the result in CONFIG_DIR
+    help               print this message
+
+  options:
+    -c CONFIG_DIR      configuration directory
+    -n NORMALIZED_DIR  normalized directory
+    `)
+}
+
 func main() {
     var c string
     var n string
@@ -129,7 +143,7 @@ func main() {
     mergeCmd.StringVar(&c, "c", "./", "config directory")
     mergeCmd.StringVar(&n, "n", "./.carver/", "normalized directory")
     if len(os.Args) < 2 {
-        fmt.Println("expected subcommand 'normalize' or 'merge'")
+        printUsage()
         os.Exit(1)
     }
     sub_args := os.Args[2:]
@@ -170,7 +184,7 @@ func main() {
             km.to_files()
         writeFiles(c, filenames)
     default:
-        fmt.Println("invalid subcommand")
+        printUsage()
     }
 }
 

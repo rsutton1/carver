@@ -54,19 +54,35 @@ func readJsonFile(path string) (interface{}, error) {
     return f, err
 }
 
-func loadFiles(dir string, ignore string) []file {
+func getFilePaths(dir string, ignore string) []string {
+    var file_paths []string
+    config, err := readJsonFile(dir+"/.carver.yaml")
+    if err == nil {
+        config_file := config.(map[string]interface{})
+        for _, fstr := range config_file["files"].([]interface{}){
+            file_paths = append(file_paths, fstr.(string))
+        }
+        return file_paths
+    }
     files, err := os.ReadDir(dir)
     if err != nil {
         log.Fatal(err)
         os.Exit(1)
     }
-    var file_objs []file
     for _, e := range files {
         file_path := path.Clean(e.Name())
-        file_path_absolute := path.Clean(dir + "/" + e.Name())
         if file_path == ignore {
             continue
         }
+        file_paths = append(file_paths, file_path)
+    }
+    return file_paths
+}
+
+func loadFiles(dir string, file_paths []string) []file {
+    var file_objs []file
+    for _, file_path := range file_paths {
+        file_path_absolute := path.Clean(dir + "/" + file_path)
         c, err := readJsonFile(file_path_absolute)
         if err != nil {
             log.Fatal(err)
@@ -154,7 +170,8 @@ func main() {
     case "normalize":
         normalizeCmd.Parse(sub_args)
         dir := c
-        files := loadFiles(dir, n)
+        file_paths := getFilePaths(dir, n)
+        files := loadFiles(dir, file_paths)
         keymap_monad := keymapFiles(files)
         num_files := len(keymap_monad.names)
         filenames := keymap_monad.
@@ -170,7 +187,8 @@ func main() {
         mergeCmd.Parse(sub_args)
         dir := n
         common_path := path.Clean("common.json")
-        files := loadFiles(dir, "")
+        file_paths := getFilePaths(dir, n)
+        files := loadFiles(dir, file_paths)
         keymap_monad := keymapFiles(files)
         normalizeCmd.Parse(sub_args)
         names := keymap_monad.names

@@ -6,7 +6,7 @@ Carver is an easy-to-use command-line tool that seamlessly organizes JSON files.
 
 Say you have the following (contrived) configurations for a hypothetical app.
 
-dev.json:
+dev/some-app.json:
 ```
 {
     "foo": "bar",
@@ -21,7 +21,7 @@ dev.json:
 }
 ```
 
-staging.json:
+staging/some-app.json:
 ```
 {
     "foo": "bar",
@@ -35,7 +35,7 @@ staging.json:
 }
 ```
 
-prod.json:
+prod/some-app.json:
 ```
 {
     "foo": "bar",
@@ -53,15 +53,15 @@ environment-specific overrides.
 
 ```
 $ carver normalize
-Generated ./common.json
-Updated ./dev.json
-Updated ./staging.json
-Updated ./prod.json
+Generated .carver/some-app.json
+Updated .carver/dev/some-app.json
+Updated .carver/staging/some-app.json
+Updated .carver/prod/some-app.json
 ```
 
 After running Carver, the files contain the following content:
 
-common.json
+.carver/some-app.json
 ```
 {
     "foo": "bar",
@@ -71,7 +71,7 @@ common.json
 }
 ```
 
-dev.json
+.carver/dev/some-app.json
 ```
 {
     "env": "dev",
@@ -84,7 +84,7 @@ dev.json
 }
 ```
 
-staging.json:
+.carver/staging/some-app.json:
 ```
 {
     "env": "staging",
@@ -96,7 +96,7 @@ staging.json:
 }
 ```
 
-prod.json:
+.carver/prod/some-app.json:
 ```
 {
     "env": "prod",
@@ -106,11 +106,11 @@ prod.json:
 ```
 
 This demonstrates that Carver consolidates common key-value pairs by moving them
-into the common file, `common.json`. For instance, Carver consolidated the "foo"
-key because it has same value (of "bar") in all files. However, notice that
-"tls" key was not consolidated, since the value differs in the "dev"
-file. Whenever it runs, Carver ensures that the common file contains any
-keys which have the same value in all files.
+into the common file, `.carver/some-app.json`. For instance, Carver consolidated
+the "foo" key because it has same value (of "bar") in all files. However, notice
+that "tls" key was not consolidated, since the value differs in the "dev" file.
+Whenever it runs, Carver ensures that the common file contains any keys which
+have the same value in all files.
 
 Carver is idempotent so it can be run repeatedly. If it finds the files are
 already consolidated, it will not make any changes.
@@ -119,8 +119,7 @@ Run carver with `merge` to restore the files:
 
 ```
 $ carver merge
-Removed ./common.json
-Updated ./dev.json
-Updated ./staging.json
-Updated ./prod.json
+Updated ./dev/some-app.json
+Updated ./staging/some-app.json
+Updated ./prod/some-app.json
 ```

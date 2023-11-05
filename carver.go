@@ -1,17 +1,10 @@
 package main
 
 import (
-    "log"
-    "fmt"
-    "path"
-    "os"
-    "flag"
     "encoding/json"
     "github.com/nqd/flat"
-    "github.com/ghodss/yaml"
 )
 
-type filesArgs []string
 
 type keymap_node struct {
     Count int `json:"count"`
@@ -26,183 +19,9 @@ type monad struct {
     names []string
 }
 
-type file struct {
-    name string
-    path string
-    obj map[string]interface{}
-}
-
-func (i * filesArgs) Set(value string) error {
-    *i = append(*i, value)
-    return nil
-}
-
-var bf filesArgs
-var cf filesArgs
-
-func readJsonFile(path string) (interface{}, error) {
-    b, err := os.ReadFile(path)
-    if err != nil {
-        return nil, err
-    }
-    var f interface{}
-    if json.Valid(b) {
-        err = json.Unmarshal(b, &f)
-    } else {
-        err = yaml.Unmarshal(b, &f)
-    }
-    return f, err
-}
-
-func getFilePaths(dir string, ignore string) []string {
-    var file_paths []string
-    config, err := readJsonFile(dir+"/.carver.yaml")
-    if err == nil {
-        config_file := config.(map[string]interface{})
-        for _, fstr := range config_file["files"].([]interface{}){
-            file_paths = append(file_paths, fstr.(string))
-        }
-        return file_paths
-    }
-    files, err := os.ReadDir(dir)
-    if err != nil {
-        log.Fatal(err)
-        os.Exit(1)
-    }
-    for _, e := range files {
-        file_path := path.Clean(e.Name())
-        if file_path == ignore {
-            continue
-        }
-        file_paths = append(file_paths, file_path)
-    }
-    return file_paths
-}
-
-func loadFiles(dir string, file_paths []string) []file {
-    var file_objs []file
-    for _, file_path := range file_paths {
-        file_path_absolute := path.Clean(dir + "/" + file_path)
-        c, err := readJsonFile(file_path_absolute)
-        if err != nil {
-            log.Fatal(err)
-            os.Exit(1)
-        }
-        file_obj := file{
-            file_path,
-            file_path,
-            c.(map[string]interface{}),
-        }
-        file_objs = append(file_objs, file_obj)
-    }
-    return file_objs
-}
-
-func keymapFiles(files []file) monad {
-    m1 := monad{
-        nil,
-        make(keymap),
-        []string{},
-    }
-    for _, f := range files {
-        args := []interface{}{f}
-        m1 = m1.bind(km_merge, args...)
-        m1.names = append(m1.names, f.name)
-    }
-    return m1
-}
-
-func writeFiles(output_dir string, filenames map[string]map[string]interface{}) {
-    for name, obj := range filenames {
-        file_path_absolute := path.Clean(output_dir + "/" + name)
-        file_ext := path.Ext(file_path_absolute)
-        objI, _ := flat.Unflatten(obj, nil)
-        var objStr []byte
-        if file_ext == ".json" {
-            objStr, _ = json.MarshalIndent(objI, "", "  ")
-        } else {
-            objStr, _ = yaml.Marshal(objI)
-        }
-        err := os.MkdirAll(output_dir, 0750)
-        if err != nil {
-            log.Fatal(err)
-        }
-        err = os.WriteFile(file_path_absolute, objStr, 0666)
-        if err != nil {
-            log.Fatal(err)
-        }
-    }
-}
-
-func printUsage() {
-    fmt.Println(`usage: carver [options] command
-
-  command:
-    normalize          normalize CONFIG_DIR and store the result in NORMALIZED_DIR
-    merge              merge NORMALIZED_DIR and store the result in CONFIG_DIR
-    help               print this message
-
-  options:
-    -c CONFIG_DIR      configuration directory
-    -n NORMALIZED_DIR  normalized directory
-    `)
-}
-
-func main() {
-    var c string
-    var n string
-    normalizeCmd := flag.NewFlagSet("normalize", flag.ExitOnError)
-    normalizeCmd.StringVar(&c, "c", "./", "config directory")
-    normalizeCmd.StringVar(&n, "n", "./.carver/", "normalized directory")
-    mergeCmd := flag.NewFlagSet("merge", flag.ExitOnError)
-    mergeCmd.StringVar(&c, "c", "./", "config directory")
-    mergeCmd.StringVar(&n, "n", "./.carver/", "normalized directory")
-    if len(os.Args) < 2 {
-        printUsage()
-        os.Exit(1)
-    }
-    sub_args := os.Args[2:]
-    common_path := path.Clean("common.json")
-    c = path.Clean(c)
-    n = path.Clean(n)
-    switch os.Args[1] {
-    case "normalize":
-        normalizeCmd.Parse(sub_args)
-        dir := c
-        file_paths := getFilePaths(dir, n)
-        files := loadFiles(dir, file_paths)
-        keymap_monad := keymapFiles(files)
-        num_files := len(keymap_monad.names)
-        filenames := keymap_monad.
-            bind(
-                normalize,
-                []interface{}{
-                    common_path,
-                    num_files,
-                }...).
-            km.to_files()
-        writeFiles(n, filenames)
-    case "merge":
-        mergeCmd.Parse(sub_args)
-        dir := n
-        common_path := path.Clean("common.json")
-        file_paths := getFilePaths(dir, n)
-        files := loadFiles(dir, file_paths)
-        keymap_monad := keymapFiles(files)
-        normalizeCmd.Parse(sub_args)
-        names := keymap_monad.names
-        filenames := keymap_monad.
-            bind(
-                resolve,
-                []interface{}{
-                    common_path,
-                    names,
-                }...).
-            km.to_files()
-        writeFiles(c, filenames)
-    default:
-        printUsage()
-    }
+type keymap_group struct {
+    id string
+    km monad
 }
 
 func type_to_string(v interface{}) string {
@@ -212,6 +31,10 @@ func type_to_string(v interface{}) string {
     default:
         return "string"
     }
+}
+
+func (m monad) get_names() []string {
+    return m.names
 }
 
 func (km keymap) get_node(p string, v interface{}) keymap_node {
@@ -274,7 +97,7 @@ func (km keymap) to_files() map[string]map[string]interface{} {
 }
 
 func km_merge(km_updated keymap, fs ...interface{}) (keymap, error) {
-    f := fs[0].(file)
+    f := fs[0].(vfile)
     km_flat, _ := flat.Flatten(f.obj, nil)
     for path, value := range km_flat {
         kmn := km_updated.get_node(path, value)
@@ -309,7 +132,7 @@ func normalize(km keymap, args ...interface{}) (keymap, error) {
 func resolve(km keymap, args ...interface{}) (keymap, error) {
     common_name := args[0].(string)
     names := args[1].([]string)
-    num_files := len(names) - 1
+    num_files := len(names)
     paths_new := map[string]interface{}{}
     for _, name := range names {
         if name == common_name {
